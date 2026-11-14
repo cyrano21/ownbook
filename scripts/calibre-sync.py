@@ -49,21 +49,31 @@ def authenticate_ownbook(base_url, user, password):
 
 
 def get_existing_books(base_url, token):
-    """Fetch existing book titles/ids from OwnBook."""
-    url = f"{base_url}/api/collections/books/records?perPage=500"
-    req = urllib.request.Request(
-        url,
-        headers={"Authorization": f"Bearer {token}"}
-    )
-    try:
-        with urllib.request.urlopen(req, timeout=15) as resp:
-            body = json.loads(resp.read().decode("utf-8"))
-            items = body.get("items", [])
-            # Map normalized title to book record
-            return {item.get("title", "").strip().lower(): item for item in items}
-    except Exception as e:
-        logger.error(f"Failed to fetch existing books: {e}")
-        return {}
+    """Fetch existing book titles/ids from OwnBook with complete pagination."""
+    all_books = {}
+    page = 1
+    while True:
+        url = f"{base_url}/api/collections/books/records?page={page}&perPage=500&fields=id,title"
+        req = urllib.request.Request(
+            url,
+            headers={"Authorization": f"Bearer {token}"}
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                body = json.loads(resp.read().decode("utf-8"))
+                items = body.get("items", [])
+                for item in items:
+                    title_norm = item.get("title", "").strip().lower()
+                    if title_norm:
+                        all_books[title_norm] = item
+                if page >= body.get("totalPages", 1) or len(items) == 0:
+                    break
+                page += 1
+        except Exception as e:
+            logger.error(f"Failed to fetch existing books (page {page}): {e}")
+            break
+    logger.info(f"Loaded {len(all_books)} existing books from OwnBook.")
+    return all_books
 
 
 def upload_book(base_url, token, user_id, title, author, description, file_path):
