@@ -1,0 +1,41 @@
+services:
+  ownbook:
+    image: uzqw/ownbook:latest
+    restart: unless-stopped
+    ports:
+      - '18093:18093'
+    volumes:
+      - /data/ownbook/pb_data:/app/pb_data
+      - /data/calibre-web/books:/calibre_library:ro
+    environment:
+      - POCKETBASE_HOST=0.0.0.0
+      - POCKETBASE_PORT=18093
+      - PB_SUPERUSER_EMAIL=${PB_SUPERUSER_EMAIL:-admin@orchidy.fr}
+      - PB_SUPERUSER_PASSWORD=${PB_SUPERUSER_PASSWORD:-AdminSecret2026!}
+      - APP_USER_EMAIL=${APP_USER_EMAIL:-figoro@orchidy.fr}
+      - APP_USER_PASSWORD=${APP_USER_PASSWORD:-OwnBookSecret2026!}
+      - APP_USER_NAME=${APP_USER_NAME:-Figoro}
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:18093/api/health >/dev/null || exit 1"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  calibre-sync:
+    build:
+      context: .
+      dockerfile: sync.Dockerfile
+    image: ownbook-calibre-sync:latest
+    restart: unless-stopped
+    depends_on:
+      ownbook:
+        condition: service_healthy
+    volumes:
+      - /data/calibre-web/books:/calibre_library:ro
+    environment:
+      - OWNBOOK_URL=http://ownbook:18093
+      - OWNBOOK_USER=${APP_USER_EMAIL:-figoro@orchidy.fr}
+      - OWNBOOK_PASSWORD=${APP_USER_PASSWORD:-OwnBookSecret2026!}
+      - CALIBRE_LIBRARY_PATH=/calibre_library
+      - SYNC_INTERVAL_SECONDS=300
