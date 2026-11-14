@@ -4,9 +4,6 @@ services:
     restart: unless-stopped
     ports:
       - '18093:18093'
-    networks:
-      - default
-      - coolify
     volumes:
       - /data/ownbook/pb_data:/app/pb_data
       - /data/calibre-web/books:/calibre_library:ro
@@ -18,15 +15,6 @@ services:
       - APP_USER_EMAIL=${APP_USER_EMAIL:-figoro@orchidy.fr}
       - APP_USER_PASSWORD=${APP_USER_PASSWORD:-OwnBookSecret2026!}
       - APP_USER_NAME=${APP_USER_NAME:-Figoro}
-    labels:
-      - "traefik.enable=true"
-      - "traefik.docker.network=coolify"
-      - "traefik.http.routers.ownbook.rule=Host(`ownbook-books.169.58.158.213.sslip.io`)"
-      - "traefik.http.routers.ownbook.entrypoints=https"
-      - "traefik.http.routers.ownbook.tls.certresolver=letsencrypt"
-      - "traefik.http.services.ownbook.loadbalancer.server.port=18093"
-      - "traefik.http.routers.ownbook-http.rule=Host(`ownbook-books.169.58.158.213.sslip.io`)"
-      - "traefik.http.routers.ownbook-http.entrypoints=http"
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:18093/api/health >/dev/null || exit 1"]
       interval: 20s
@@ -43,8 +31,6 @@ services:
     depends_on:
       ownbook:
         condition: service_healthy
-    networks:
-      - default
     volumes:
       - /data/calibre-web/books:/calibre_library:ro
     environment:
@@ -53,8 +39,3 @@ services:
       - OWNBOOK_PASSWORD=${APP_USER_PASSWORD:-OwnBookSecret2026!}
       - CALIBRE_LIBRARY_PATH=/calibre_library
       - SYNC_INTERVAL_SECONDS=300
-
-networks:
-  default:
-  coolify:
-    external: true
