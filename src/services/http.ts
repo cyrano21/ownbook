@@ -10,7 +10,7 @@
 // requests is outside JS control. For that, the reverse proxy must avoid
 // keeping half-open connections alive (e.g. force HTTP/1.1 + Connection: close).
 
-const LIGHT_TIMEOUT_MS = 30_000
+const LIGHT_TIMEOUT_MS = 60_000
 const HEAVY_TIMEOUT_MS = 120_000
 const MAX_RETRIES = 2
 const RETRY_DELAY_MS = 400
